@@ -2,6 +2,7 @@ package com.mcjty.rftools;
 
 import com.mcjty.rftools.blocks.logic.RedstoneChannels;
 import com.mcjty.rftools.blocks.teleporter.TeleportDestinations;
+import com.mcjty.rftools.commands.CommandRftCfg;
 import com.mcjty.rftools.commands.CommandRftDb;
 import com.mcjty.rftools.commands.CommandRftDim;
 import com.mcjty.rftools.commands.CommandRftTp;
@@ -24,7 +25,6 @@ import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
-import net.minecraft.stats.Achievement;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChatStyle;
@@ -40,7 +40,7 @@ import java.util.EnumMap;
 @Mod(modid = RFTools.MODID, name="RFTools", dependencies = "required-after:Forge@["+RFTools.MIN_FORGE_VER+",);required-after:CoFHCore@["+RFTools.MIN_COFHCORE_VER+",)", version = RFTools.VERSION)
 public class RFTools {
     public static final String MODID = "rftools";
-    public static final String VERSION = "2.53";
+    public static final String VERSION = "2.54";
     public static final String MIN_FORGE_VER = "10.13.0.1230";
     public static final String MIN_COFHCORE_VER = "1.7.10R3.0.0B9";
 
@@ -169,6 +169,7 @@ public class RFTools {
         event.registerServerCommand(new CommandRftDim());
         event.registerServerCommand(new CommandRftTp());
         event.registerServerCommand(new CommandRftDb());
+        event.registerServerCommand(new CommandRftCfg());
     }
 
     @EventHandler

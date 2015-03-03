@@ -57,6 +57,8 @@ item.HastePlusEModule.name=Haste Plus Module
 item.SaturationEModule.name=Saturation Module
 item.SaturationPlusEModule.name=Saturation Plus Module
 item.FeatherFallingEModule.name=Feather Falling Module
+item.FeatherFallingPlusEModule.name=Feather Falling Plus Module
+item.FlightEModule.name=Flight Module
 
 item.DimletBase.name=Dimlet Base Part
 item.DimletControlCircuit0.name=Dimlet Control Circuit Rarity 0
@@ -131,6 +133,7 @@ tile.screenControllerBlock.name=Screen Controller
 tile.biomeAbsorberBlock.name=Biome Absorber
 tile.materialAbsorberBlock.name=Material Absorber
 tile.liquidAbsorberBlock.name=Liquid Absorber
+tile.timeAbsorberBlock.name=Time Absorber
 tile.environmentalControllerBlock.name=Environmental Controller
 
 tile.dimensionalShardBlock.name=Dimensional Shard Ore

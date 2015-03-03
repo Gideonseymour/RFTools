@@ -4,7 +4,6 @@ import com.mcjty.rftools.blocks.dimlets.DimletConfiguration;
 import com.mcjty.rftools.dimension.DimensionInformation;
 import com.mcjty.rftools.dimension.DimensionStorage;
 import com.mcjty.rftools.dimension.RfToolsDimensionManager;
-import com.mcjty.rftools.dimension.world.types.EffectType;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ChatComponentText;
@@ -24,6 +23,11 @@ public class CmdSetPower extends AbstractRfToolsCommand {
     @Override
     public int getPermissionLevel() {
         return 2;
+    }
+
+    @Override
+    public boolean isClientSide() {
+        return false;
     }
 
     @Override

@@ -57,6 +57,8 @@ item.HastePlusEModule.name=Модуль «Спешка+»
 item.SaturationEModule.name=Модуль «Насыщение»
 item.SaturationPlusEModule.name=Модуль «Насыщение+»
 item.FeatherFallingEModule.name=Feather Falling Module
+item.FeatherFallingPlusEModule.name=Feather Falling Plus Module
+item.FlightEModule.name=Flight Module
 
 item.DimletBase.name=Основая деталь димлета
 item.DimletControlCircuit0.name=Схема управления редкостью димлета 0
@@ -131,6 +133,7 @@ tile.screenControllerBlock.name=Экранный контроллер
 tile.biomeAbsorberBlock.name=Поглотитель биомов
 tile.materialAbsorberBlock.name=Материальный поглотитель
 tile.liquidAbsorberBlock.name=Поглотитель жидкостей
+tile.timeAbsorberBlock.name=Time Absorber
 tile.environmentalControllerBlock.name=Контроллер окружающей среды
 
 tile.dimensionalShardBlock.name=Руда осколков измерения

@@ -39,6 +39,6 @@ public class HastePlusEModuleItem extends Item implements EnvModuleProvider {
 
     @Override
     public String getName() {
-        return "Haste";
+        return "Haste+";
     }
 }

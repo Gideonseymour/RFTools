@@ -4,7 +4,6 @@ import com.mcjty.rftools.dimension.DimensionStorage;
 import com.mcjty.rftools.dimension.RfToolsDimensionManager;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 
@@ -22,6 +21,11 @@ public class CmdDelDimension extends AbstractRfToolsCommand {
     @Override
     public int getPermissionLevel() {
         return 3;
+    }
+
+    @Override
+    public boolean isClientSide() {
+        return false;
     }
 
     @Override

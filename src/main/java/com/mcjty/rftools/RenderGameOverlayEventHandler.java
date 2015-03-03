@@ -33,8 +33,11 @@ public class RenderGameOverlayEventHandler {
             return;
         }
 
-        int x = 2;
-        int y = 2;
+        int x = Preferences.getBuffBarX();
+        int y = Preferences.getBuffBarY();
+        if (x == -1 || y == -1) {
+            return;
+        }
 
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
         GL11.glDisable(GL11.GL_LIGHTING);
@@ -46,6 +49,9 @@ public class RenderGameOverlayEventHandler {
             switch (buff) {
                 case BUFF_FEATHERFALLING:
                     item = ModItems.featherFallingEModuleItem;
+                    break;
+                case BUFF_FEATHERFALLINGPLUS:
+                    item = ModItems.featherFallingPlusEModuleItem;
                     break;
                 case BUFF_HASTE:
                     item = ModItems.hasteEModuleItem;
@@ -70,6 +76,9 @@ public class RenderGameOverlayEventHandler {
                     break;
                 case BUFF_SPEEDPLUS:
                     item = ModItems.speedPlusEModuleItem;
+                    break;
+                case BUFF_FLIGHT:
+                    item = ModItems.flightEModuleItem;
                     break;
                 default:
                     item = null;

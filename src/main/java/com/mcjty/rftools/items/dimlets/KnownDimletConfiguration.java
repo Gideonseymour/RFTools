@@ -16,6 +16,8 @@ import com.mcjty.varia.BlockMeta;
 import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
 import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.boss.EntityDragon;
+import net.minecraft.entity.boss.EntityWither;
 import net.minecraft.entity.monster.*;
 import net.minecraft.entity.passive.*;
 import net.minecraft.init.Blocks;
@@ -61,7 +63,7 @@ public class KnownDimletConfiguration {
     // All craftable dimlets.
     public static final Set<Integer> craftableDimlets = new HashSet<Integer>();
 
-    private static final Set<DimletKey> dimletBlackList = new HashSet<DimletKey>();
+    private static final Set<DimletKey> dimletBlackList = new HashSet<DimletKey>(); // Note, the keys here can contain wildcards
     private static final Set<DimletKey> dimletRandomNotAllowed = new HashSet<DimletKey>();
 
     private static int lastId = 0;
@@ -82,13 +84,32 @@ public class KnownDimletConfiguration {
         idToDimletEntry.put(id, dimletEntry);
     }
 
+    private static boolean isBlacklistedKey(DimletKey key) {
+        if (dimletBlackList.contains(key)) {
+            return true;
+        }
+
+        for (DimletKey blackKey : dimletBlackList) {
+            if (key.getType() == blackKey.getType()) {
+                String blackName = blackKey.getName();
+                if (blackName.endsWith("*")) {
+                    if (key.getName().startsWith(blackName.substring(0, blackName.length()-1))) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     private static int registerDimlet(Configuration cfg, Configuration mainCfg, DimletKey key, DimletMapping mapping) {
         String k = "dimlet." + key.getType().getName() + "." + key.getName();
 
         Integer id = mapping.getId(key);
 
         // Check blacklist but not if we are on a client connecting to a server.
-        if (cfg != null && dimletBlackList.contains(key)) {
+        if (cfg != null && isBlacklistedKey(key)) {
             id = -1;
         } else if (id == null) {
             // We don't have this key in world data.
@@ -305,6 +326,9 @@ public class KnownDimletConfiguration {
         initMobItem(cfg, mainCfg, EntitySheep.class, "Sheep", mapping, 10, 3, 4, 40);
         initMobItem(cfg, mainCfg, EntitySquid.class, "Squid", mapping, 10, 3, 4, 40);
         initMobItem(cfg, mainCfg, EntityWolf.class, "Wolf", mapping, 10, 3, 4, 20);
+        initMobItem(cfg, mainCfg, EntityVillager.class, "Villager", mapping, 10, 3, 4, 20);
+        initMobItem(cfg, mainCfg, EntityWither.class, "Wither", mapping, 5, 1, 2, 5);
+        initMobItem(cfg, mainCfg, EntityDragon.class, "Dragon", mapping, 4, 1, 2, 4);
         addExtraInformation(idDefaultMobs, "With this default dimlet you will just get", "the default mob spawning");
 
         int idSkyNormal = initSkyItem(cfg, mainCfg, "Normal", new SkyDescriptor.Builder().skyType(SkyType.SKY_NORMAL).build(), false, mapping);

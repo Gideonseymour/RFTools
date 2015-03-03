@@ -1,6 +1,5 @@
 package com.mcjty.rftools.commands;
 
-import com.mcjty.rftools.dimension.DimensionStorage;
 import com.mcjty.rftools.dimension.RfToolsDimensionManager;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
@@ -22,6 +21,11 @@ public class CmdReclaim extends AbstractRfToolsCommand {
     @Override
     public int getPermissionLevel() {
         return 3;
+    }
+
+    @Override
+    public boolean isClientSide() {
+        return false;
     }
 
     @Override

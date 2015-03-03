@@ -1,9 +1,6 @@
 package com.mcjty.rftools.items.dimlets;
 
 import com.mcjty.rftools.RFTools;
-import com.mcjty.rftools.dimension.DimensionInformation;
-import com.mcjty.rftools.dimension.RfToolsDimensionManager;
-import com.mcjty.rftools.dimension.world.GenericWorldProvider;
 import com.mcjty.rftools.items.ModItems;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -139,7 +136,7 @@ public class KnownDimlet extends Item {
         DimletKey key = DimletMapping.getInstance().getKey(damage);
         if (key == null) {
             // Safety. Should not occur.
-            return null;
+            return icons.get(DimletType.DIMLET_SPECIAL);
         }
         DimletType type = key.getType();
         return icons.get(type);
@@ -147,7 +144,11 @@ public class KnownDimlet extends Item {
 
     @Override
     public String getUnlocalizedName(ItemStack itemStack) {
-        return KnownDimletConfiguration.idToDisplayName.get(itemStack.getItemDamage());
+        String name = KnownDimletConfiguration.idToDisplayName.get(itemStack.getItemDamage());
+        if (name == null) {
+            return "<unknown dimlet>";
+        }
+        return name;
     }
 
     @Override

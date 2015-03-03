@@ -12,11 +12,9 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.DamageSource;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.DimensionManager;
@@ -32,6 +30,9 @@ public class DimensionTickEvent {
 
     @SubscribeEvent
     public void onServerTick(TickEvent.ServerTickEvent evt) {
+        if (evt.phase == TickEvent.Phase.START) {
+            return;
+        }
         counter--;
         if (counter <= 0) {
             counter = MAXTICKS;
