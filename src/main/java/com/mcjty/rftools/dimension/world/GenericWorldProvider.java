@@ -5,6 +5,7 @@ import com.mcjty.rftools.blocks.dimlets.DimletConfiguration;
 import com.mcjty.rftools.dimension.DimensionInformation;
 import com.mcjty.rftools.dimension.DimensionStorage;
 import com.mcjty.rftools.dimension.RfToolsDimensionManager;
+import com.mcjty.rftools.dimension.description.WeatherDescriptor;
 import com.mcjty.rftools.dimension.network.PacketGetDimensionEnergy;
 import com.mcjty.rftools.dimension.world.types.ControllerType;
 import com.mcjty.rftools.dimension.world.types.SkyType;
@@ -45,22 +46,30 @@ public class GenericWorldProvider extends WorldProvider {
             if (dimensionInformation == null) {
                 RFTools.log("Dimension information for dimension " + dim + " is missing!");
             } else {
-                long forcedSeed = dimensionInformation.getForcedDimensionSeed();
-                if (forcedSeed != 0) {
-                    RFTools.log("Forced seed for dimension " + dim + ": " + forcedSeed);
-                    seed = forcedSeed;
-                }
+                setSeed(dim);
                 setupProviderInfo();
             }
         }
         return dimensionInformation;
     }
 
+    private void setSeed(int dim) {
+        long forcedSeed = dimensionInformation.getForcedDimensionSeed();
+        if (forcedSeed != 0) {
+            RFTools.log("Forced seed for dimension " + dim + ": " + forcedSeed);
+            seed = forcedSeed;
+        } else {
+            long baseSeed = dimensionInformation.getBaseSeed();
+            if (baseSeed != 0) {
+                seed = calculateSeed(baseSeed, dim) ;
+            } else {
+                seed = calculateSeed(worldObj.getSeed(), dim) ;
+            }
+        }
+    }
+
     @Override
     public void registerWorldChunkManager() {
-        int dim = worldObj.provider.dimensionId;
-		seed = DimletConfiguration.randomizeSeed ? calculateSeed((long) (Math.random() * 10000 + 1), dim) : calculateSeed(worldObj.getSeed(), dim) ;
-
         getDimensionInformation();
         storage = DimensionStorage.getDimensionStorage(worldObj);
 
@@ -76,7 +85,7 @@ public class GenericWorldProvider extends WorldProvider {
                 worldChunkMgr = new WorldChunkManager(seed, worldObj.getWorldInfo().getTerrainType());
             } else {
                 GenericWorldChunkManager.hackyDimensionInformation = dimensionInformation;      // Hack to get the dimension information in the superclass.
-                worldChunkMgr = new GenericWorldChunkManager(seed, worldObj.getWorldInfo().getTerrainType(), worldObj, dimensionInformation);
+                worldChunkMgr = new GenericWorldChunkManager(seed, worldObj.getWorldInfo().getTerrainType(), dimensionInformation);
             }
         } else {
             worldChunkMgr = new WorldChunkManager(seed, worldObj.getWorldInfo().getTerrainType());
@@ -147,7 +156,7 @@ public class GenericWorldProvider extends WorldProvider {
     @Override
     public IChunkProvider createChunkGenerator() {
         int dim = worldObj.provider.dimensionId;
-		long seed = DimletConfiguration.randomizeSeed ? calculateSeed((long) (Math.random() * 10000 + 1), dim) : calculateSeed(worldObj.getSeed(), dim) ;
+        setSeed(dim);
         return new GenericChunkProvider(worldObj, seed);
     }
 
@@ -165,7 +174,7 @@ public class GenericWorldProvider extends WorldProvider {
 
     @Override
     @SideOnly(Side.CLIENT)
-    public Vec3 getFogColor(float angle, float p_76562_2_) {
+    public Vec3 getFogColor(float angle, float dt) {
         int dim = worldObj.provider.dimensionId;
         if (System.currentTimeMillis() - lastFogTime > 1000) {
             lastFogTime = System.currentTimeMillis();
@@ -186,7 +195,7 @@ public class GenericWorldProvider extends WorldProvider {
             b = dimensionInformation.getSkyDescriptor().getFogColorFactorB() * factor;
         }
 
-        Vec3 color = super.getFogColor(angle, p_76562_2_);
+        Vec3 color = super.getFogColor(angle, dt);
         return Vec3.createVectorHelper(color.xCoord * r, color.yCoord * g, color.zCoord * b);
     }
 
@@ -257,10 +266,30 @@ public class GenericWorldProvider extends WorldProvider {
     }
 
     @Override
-    public float calculateCelestialAngle(long time, float p_76563_3_) {
+    public void updateWeather() {
+        super.updateWeather();
+        if (!worldObj.isRemote) {
+            getDimensionInformation();
+            if (dimensionInformation != null) {
+                WeatherDescriptor descriptor = dimensionInformation.getWeatherDescriptor();
+                float rs = descriptor.getRainStrength();
+                if (rs > -0.5f) {
+                    worldObj.rainingStrength = rs;
+                }
+
+                float ts = descriptor.getThunderStrength();
+                if (ts > -0.5f) {
+                    worldObj.thunderingStrength = ts;
+                }
+            }
+        }
+    }
+
+    @Override
+    public float calculateCelestialAngle(long time, float dt) {
         getDimensionInformation();
         if (dimensionInformation == null) {
-            return super.calculateCelestialAngle(time, p_76563_3_);
+            return super.calculateCelestialAngle(time, dt);
         }
 
         if (!dimensionInformation.getTerrainType().hasSky()) {
@@ -269,9 +298,9 @@ public class GenericWorldProvider extends WorldProvider {
 
         if (dimensionInformation.getCelestialAngle() == null) {
             if (dimensionInformation.getTimeSpeed() == null) {
-                return super.calculateCelestialAngle(time, p_76563_3_);
+                return super.calculateCelestialAngle(time, dt);
             } else {
-                return super.calculateCelestialAngle((long) (time * dimensionInformation.getTimeSpeed()), p_76563_3_);
+                return super.calculateCelestialAngle((long) (time * dimensionInformation.getTimeSpeed()), dt);
             }
         } else {
             return dimensionInformation.getCelestialAngle();

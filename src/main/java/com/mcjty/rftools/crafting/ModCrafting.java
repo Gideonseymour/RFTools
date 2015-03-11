@@ -70,6 +70,8 @@ public final class ModCrafting {
                 'T', redstoneTorch);
         GameRegistry.addRecipe(new ItemStack(ModBlocks.destinationAnalyzerBlock), "o o", " M ", "o o", 'M', ModBlocks.machineFrame,
                 'o', Items.ender_pearl);
+        GameRegistry.addRecipe(new ItemStack(ModBlocks.matterBoosterBlock), " B ", "BMB", " B ", 'M', ModBlocks.destinationAnalyzerBlock,
+                'B', Blocks.redstone_block);
         GameRegistry.addRecipe(new ItemStack(ModItems.chargedPorterItem), " e ", "eRe", "iei", 'e', Items.ender_pearl, 'R', Blocks.redstone_block, 'i', Items.iron_ingot);
 
         initLogicBlockCrafting();
@@ -149,7 +151,7 @@ public final class ModCrafting {
                 new ItemStack(ModItems.regenerationEModuleItem)));
 
         GameRegistry.addRecipe(new NBTMatchingRecipe(3, 3,
-                new ItemStack[] {null, horseSyringe, null, reds, gold, reds, null, ink, null},
+                new ItemStack[] {new ItemStack(Items.saddle), horseSyringe, new ItemStack(Items.saddle), reds, gold, reds, null, ink, null},
                 new String[][] {null, syringeMatcher, null, null, null, null, null, null, null},
                 new ItemStack(ModItems.speedEModuleItem)));
 

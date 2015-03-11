@@ -38,16 +38,19 @@ public class DimensionEditorTileEntity extends GenericEnergyHandlerTileEntity im
     @Override
     protected void checkStateServer() {
         ItemStack dimletItemStack = validateDimletItemStack();
-        if (dimletItemStack == null) return;
+        if (dimletItemStack == null) {
+            return;
+        }
 
         ItemStack dimensionItemStack = validateDimensionItemStack();
-        if (dimensionItemStack == null) return;
-
-        DimletMapping mapping = DimletMapping.getDimletMapping(worldObj);
+        if (dimensionItemStack == null) {
+            return;
+        }
 
         if (ticksLeft == -1) {
             // We were not injecting. Start now.
-            DimletEntry dimletEntry = KnownDimletConfiguration.getEntry(dimletItemStack.getItemDamage());
+            DimletKey key = KnownDimletConfiguration.getDimletKey(dimletItemStack, worldObj);
+            DimletEntry dimletEntry = KnownDimletConfiguration.getEntry(key);
             ticksCost = DimletCosts.baseDimensionTickCost + dimletEntry.getTickCost();
             ticksLeft = ticksCost;
             rfPerTick = DimletCosts.baseDimensionCreationCost + dimletEntry.getRfCreateCost();
@@ -69,10 +72,10 @@ public class DimensionEditorTileEntity extends GenericEnergyHandlerTileEntity im
                     int id = tagCompound.getInteger("id");
 
                     ItemStack dimletStack = validateDimletItemStack();
-                    int dimletId = dimletStack.getItemDamage();
+                    DimletKey key = KnownDimletConfiguration.getDimletKey(dimletStack, worldObj);
 
                     DimensionInformation information = dimensionManager.getDimensionInformation(id);
-                    information.injectDimlet(dimletId, mapping);
+                    information.injectDimlet(key);
                     dimensionManager.save(worldObj);
 
                     inventoryHelper.decrStackSize(DimensionEditorContainer.SLOT_DIMLETINPUT, 1);
@@ -93,14 +96,15 @@ public class DimensionEditorTileEntity extends GenericEnergyHandlerTileEntity im
             return null;
         }
 
-        DimletMapping mapping = DimletMapping.getDimletMapping(worldObj);
-        DimletType type = mapping.getKey(itemStack.getItemDamage()).getType();
+        DimletKey key = KnownDimletConfiguration.getDimletKey(itemStack, worldObj);
+        DimletType type = key.getType();
         switch (type) {
             case DIMLET_MOBS:
             case DIMLET_SKY:
             case DIMLET_TIME:
             case DIMLET_SPECIAL:
             case DIMLET_EFFECT:
+            case DIMLET_WEATHER:
                 return itemStack;
             default:
                 return null;

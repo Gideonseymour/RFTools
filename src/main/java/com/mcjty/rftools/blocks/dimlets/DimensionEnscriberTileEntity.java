@@ -6,7 +6,7 @@ import com.mcjty.rftools.dimension.RfToolsDimensionManager;
 import com.mcjty.rftools.dimension.description.DimensionDescriptor;
 import com.mcjty.rftools.items.ModItems;
 import com.mcjty.rftools.items.dimlets.DimletKey;
-import com.mcjty.rftools.items.dimlets.DimletMapping;
+import com.mcjty.rftools.items.dimlets.KnownDimletConfiguration;
 import com.mcjty.rftools.network.Argument;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.ISidedInventory;
@@ -183,15 +183,13 @@ public class DimensionEnscriberTileEntity extends GenericTileEntity implements I
     private DimensionDescriptor convertToDimensionDescriptor() {
         List<DimensionDescriptor.DimletDescriptor> descriptors = new ArrayList<DimensionDescriptor.DimletDescriptor>();
 
-        DimletMapping mapping = DimletMapping.getDimletMapping(worldObj);
         long forcedSeed = 0;
 
         for (int i = 0 ; i < DimensionEnscriberContainer.SIZE_DIMLETS ; i++) {
             ItemStack stack = inventoryHelper.getStacks()[i + DimensionEnscriberContainer.SLOT_DIMLETS];
             if (stack != null && stack.stackSize > 0) {
-                int dimletId = stack.getItemDamage();
-                DimletKey key = mapping.getKey(dimletId);
-                descriptors.add(new DimensionDescriptor.DimletDescriptor(key.getType(), dimletId));
+                DimletKey key = KnownDimletConfiguration.getDimletKey(stack, worldObj);
+                descriptors.add(new DimensionDescriptor.DimletDescriptor(key.getType(), key));
                 NBTTagCompound tagCompound = stack.getTagCompound();
                 if (tagCompound != null && tagCompound.getLong("forcedSeed") != 0) {
                     forcedSeed = tagCompound.getLong("forcedSeed");
@@ -199,7 +197,7 @@ public class DimensionEnscriberTileEntity extends GenericTileEntity implements I
             }
             inventoryHelper.getStacks()[i + DimensionEnscriberContainer.SLOT_DIMLETS] = null;
         }
-        return new DimensionDescriptor(descriptors, worldObj, forcedSeed);
+        return new DimensionDescriptor(descriptors, forcedSeed);
     }
 
     private void extractDimlets() {
@@ -209,7 +207,7 @@ public class DimensionEnscriberTileEntity extends GenericTileEntity implements I
             int idx = DimensionEnscriberContainer.SLOT_DIMLETS;
             String descriptionString = tagCompound.getString("descriptionString");
             for (DimensionDescriptor.DimletDescriptor descriptor : DimensionDescriptor.parseDescriptionString(descriptionString)) {
-                inventoryHelper.getStacks()[idx++] = new ItemStack(ModItems.knownDimlet, 1, descriptor.getId());
+                inventoryHelper.getStacks()[idx++] = KnownDimletConfiguration.makeKnownDimlet(descriptor.getKey(), worldObj);
             }
         }
 

@@ -47,9 +47,11 @@ public class DimletConfiguration {
     public static float randomSpecialSkyChance = 0.5f;
     public static float randomExtraMobsChance = 0.4f;
     public static float randomSpecialTimeChance = 0.5f;
+    public static float randomWeatherChance = 0.8f;
     public static float randomControllerChance = 0.4f;
 
     public static int bedrockLayer = 1;
+    public static int bedBehaviour = 0;         // Behaviour when sleeping in an RFTools dimension: 0 = do nothing, 1 = explode, 2 = sleep for a few hours
 
 	public static boolean randomizeSeed = false;
 
@@ -144,12 +146,16 @@ public class DimletConfiguration {
         randomExtraMobsChance = (float) cfg.get(CATEGORY_DIMLETS, "randomExtraMobsChance", randomExtraMobsChance,
                 "The chance that extra specific mobs will spawn").getDouble();
         randomSpecialTimeChance = (float) cfg.get(CATEGORY_DIMLETS, "randomSpecialTimeChance", randomSpecialTimeChance,
-                "The chance that special time features are selected").getDouble();
+                "The chance that default time features are selected").getDouble();
+        randomWeatherChance = (float) cfg.get(CATEGORY_DIMLETS, "randomWeatherChance", randomWeatherChance,
+                "The chance that default weather features are selected").getDouble();
         randomControllerChance = (float) cfg.get(CATEGORY_DIMLETS, "randomControllerChance", randomControllerChance,
                 "The chance that a random biome controller is selected").getDouble();
 
         bedrockLayer = cfg.get(CATEGORY_DIMLETS, "bedrockLayer", bedrockLayer,
                 "The height of the bedrock layer that is generated at the bottom of some world types. Set to 0 to disable this and get default bedrock generation").getInt();
+        bedBehaviour = cfg.get(CATEGORY_DIMLETS, "bedBehaviour", bedBehaviour,
+                "Behaviour when sleeping in an RFTools dimension: 0 = do nothing, 1 = explode, 2 = sleep for a few hours").getInt();
 
 		randomizeSeed = cfg.get(CATEGORY_DIMLETS, "randomizeSeed", randomizeSeed,
 			"Randomize the seed when the dimension is created").getBoolean();

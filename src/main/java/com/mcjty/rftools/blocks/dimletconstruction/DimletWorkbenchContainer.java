@@ -38,7 +38,7 @@ public class DimletWorkbenchContainer extends GenericContainer {
     };
 
     public DimletWorkbenchContainer(EntityPlayer player, final DimletWorkbenchTileEntity containerInventory) {
-        super(factory, player);
+        super(factory);
         addInventory(CONTAINER_INVENTORY, containerInventory);
         addInventory(ContainerFactory.CONTAINER_PLAYER, player.inventory);
         setCrafter(new GenericCrafter() {
@@ -48,11 +48,6 @@ public class DimletWorkbenchContainer extends GenericContainer {
             }
         });
         generateSlots();
-    }
-
-    @Override
-    public ItemStack transferStackInSlot(EntityPlayer player, int index) {
-        return super.transferStackInSlot(player, index);
     }
 
     @Override

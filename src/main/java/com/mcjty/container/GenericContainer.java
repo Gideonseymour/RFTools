@@ -1,6 +1,7 @@
 package com.mcjty.container;
 
 import com.google.common.collect.Range;
+import com.mcjty.rftools.RFTools;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.IInventory;
@@ -14,14 +15,12 @@ import java.util.Map;
  * Generic container support.
  */
 public class GenericContainer extends Container {
-    protected Map<String,IInventory> inventories = new HashMap<String, IInventory>();
-    protected EntityPlayer player;
+    private Map<String,IInventory> inventories = new HashMap<String, IInventory>();
     private ContainerFactory factory;
     private GenericCrafter crafter = null;
 
-    public GenericContainer(ContainerFactory factory, EntityPlayer player) {
+    public GenericContainer(ContainerFactory factory) {
         this.factory = factory;
-        this.player = player;
     }
 
     public void addInventory(String name, IInventory inventory) {
@@ -116,59 +115,58 @@ public class GenericContainer extends Container {
         Slot slot = (Slot)this.inventorySlots.get(index);
 
         if (slot != null && slot.getHasStack()) {
-            ItemStack itemstack1 = slot.getStack();
-            itemstack = itemstack1.copy();
+            ItemStack origStack = slot.getStack();
+            itemstack = origStack.copy();
 
             if (factory.isSpecificItemSlot(index)) {
-                if (!mergeItemStacks(itemstack1, SlotType.SLOT_PLAYERINV, true)) {
-                    if (!mergeItemStacks(itemstack1, SlotType.SLOT_PLAYERHOTBAR, false)) {
+                if (!mergeItemStacks(origStack, SlotType.SLOT_PLAYERINV, true)) {
+                    if (!mergeItemStacks(origStack, SlotType.SLOT_PLAYERHOTBAR, false)) {
                         return null;
                     }
                 }
-                slot.onSlotChange(itemstack1, itemstack);
-            } else if (factory.isOutputSlot(index) || factory.isInputSlot(index) || factory.isSpecificItemSlot(index) || factory.isContainerSlot(index)) {
-                if (!mergeItemStacks(itemstack1, SlotType.SLOT_SPECIFICITEM, false)) {
-                    if (!mergeItemStacks(itemstack1, SlotType.SLOT_PLAYERINV, true)) {
-                        if (!mergeItemStacks(itemstack1, SlotType.SLOT_PLAYERHOTBAR, false)) {
+                slot.onSlotChange(origStack, itemstack);
+            } else if (factory.isOutputSlot(index) || factory.isInputSlot(index) || factory.isContainerSlot(index)) {
+                if (!mergeItemStacks(origStack, SlotType.SLOT_SPECIFICITEM, false)) {
+                    if (!mergeItemStacks(origStack, SlotType.SLOT_PLAYERINV, true)) {
+                        if (!mergeItemStacks(origStack, SlotType.SLOT_PLAYERHOTBAR, false)) {
                             return null;
                         }
                     }
                 }
-                slot.onSlotChange(itemstack1, itemstack);
+                slot.onSlotChange(origStack, itemstack);
             } else if (factory.isGhostSlot(index) || factory.isGhostOutputSlot(index)) {
                 return null; // @@@ Right?
             } else if (factory.isPlayerInventorySlot(index)) {
-                if (!mergeItemStacks(itemstack1, SlotType.SLOT_SPECIFICITEM, false)) {
-                    if (!mergeItemStacks(itemstack1, SlotType.SLOT_INPUT, false)) {
-                        if (!mergeItemStacks(itemstack1, SlotType.SLOT_PLAYERHOTBAR, false)) {
+                if (!mergeItemStacks(origStack, SlotType.SLOT_SPECIFICITEM, false)) {
+                    if (!mergeItemStacks(origStack, SlotType.SLOT_INPUT, false)) {
+                        if (!mergeItemStacks(origStack, SlotType.SLOT_PLAYERHOTBAR, false)) {
                             return null;
                         }
                     }
                 }
             } else if (factory.isPlayerHotbarSlot(index)) {
-                if (!mergeItemStacks(itemstack1, SlotType.SLOT_SPECIFICITEM, false)) {
-                    if (!mergeItemStacks(itemstack1, SlotType.SLOT_INPUT, false)) {
-                        if (!mergeItemStacks(itemstack1, SlotType.SLOT_PLAYERINV, false)) {
+                if (!mergeItemStacks(origStack, SlotType.SLOT_SPECIFICITEM, false)) {
+                    if (!mergeItemStacks(origStack, SlotType.SLOT_INPUT, false)) {
+                        if (!mergeItemStacks(origStack, SlotType.SLOT_PLAYERINV, false)) {
                             return null;
                         }
                     }
                 }
             } else {
-                System.out.println("index = " + index);
-                System.out.println("WEIRD SLOT???");
+                RFTools.log("Weird slot at index: " + index);
             }
 
-            if (itemstack1.stackSize == 0) {
+            if (origStack.stackSize == 0) {
                 slot.putStack(null);
             } else {
                 slot.onSlotChanged();
             }
 
-            if (itemstack1.stackSize == itemstack.stackSize) {
+            if (origStack.stackSize == itemstack.stackSize) {
                 return null;
             }
 
-            slot.onPickupFromSlot(player, itemstack1);
+            slot.onPickupFromSlot(player, origStack);
         }
 
         return itemstack;

@@ -32,7 +32,7 @@ public class DimletWorkbenchTileEntity extends GenericEnergyHandlerTileEntity im
     private InventoryHelper inventoryHelper = new InventoryHelper(this, DimletWorkbenchContainer.factory, DimletWorkbenchContainer.SIZE_BUFFER + 9);
 
     private int extracting = 0;
-    private int idToExtract = -1;
+    private DimletKey idToExtract = null;
     private int inhibitCrafting = 0;
     private boolean autoExtract = false;
 
@@ -181,15 +181,14 @@ public class DimletWorkbenchTileEntity extends GenericEnergyHandlerTileEntity im
             return false;
         }
 
-        DimletMapping mapping = DimletMapping.getDimletMapping(worldObj);
         DimletType type = DimletType.values()[stackTypeController.getItemDamage()];
         switch (type) {
             case DIMLET_BIOME:
                 return attemptBiomeDimletCrafting(stackController, stackMemory, stackEnergy, stackEssence);
             case DIMLET_MOBS:
-                return attemptMobDimletCrafting(stackController, stackMemory, stackEnergy, stackEssence, mapping);
+                return attemptMobDimletCrafting(stackController, stackMemory, stackEnergy, stackEssence);
             case DIMLET_SPECIAL:
-                return attemptSpecialDimletCrafting(stackController, stackMemory, stackEnergy, stackEssence, mapping);
+                return attemptSpecialDimletCrafting(stackController, stackMemory, stackEnergy, stackEssence);
             case DIMLET_MATERIAL:
                 return attemptMaterialDimletCrafting(stackController, stackMemory, stackEnergy, stackEssence);
             case DIMLET_LIQUID:
@@ -197,6 +196,7 @@ public class DimletWorkbenchTileEntity extends GenericEnergyHandlerTileEntity im
             case DIMLET_TIME:
                 return attemptTimeDimletCrafting(stackController, stackMemory, stackEnergy, stackEssence);
             case DIMLET_SKY:
+            case DIMLET_WEATHER:
             case DIMLET_STRUCTURE:
             case DIMLET_TERRAIN:
             case DIMLET_FEATURE:
@@ -211,78 +211,90 @@ public class DimletWorkbenchTileEntity extends GenericEnergyHandlerTileEntity im
     }
 
     private boolean attemptTimeDimletCrafting(ItemStack stackController, ItemStack stackMemory, ItemStack stackEnergy, ItemStack stackEssence) {
-        if (!isValidTimeEssence(stackEssence, stackEssence.getTagCompound())) return false;
-        int timeDimlet = findTimeDimlet(stackEssence);
-        if (timeDimlet == -1) {
+        if (!isValidTimeEssence(stackEssence, stackEssence.getTagCompound())) {
+            return false;
+        }
+        DimletKey timeDimlet = findTimeDimlet(stackEssence);
+        if (timeDimlet == null) {
             return false;
         }
         if (!matchDimletRecipe(timeDimlet, stackController, stackMemory, stackEnergy)) {
             return false;
         }
-        inventoryHelper.setInventorySlotContents(1, DimletWorkbenchContainer.SLOT_OUTPUT, new ItemStack(ModItems.knownDimlet, 1, timeDimlet));
+        inventoryHelper.setInventorySlotContents(1, DimletWorkbenchContainer.SLOT_OUTPUT, KnownDimletConfiguration.makeKnownDimlet(timeDimlet, worldObj));
         return true;
     }
 
     private boolean attemptLiquidDimletCrafting(ItemStack stackController, ItemStack stackMemory, ItemStack stackEnergy, ItemStack stackEssence) {
-        if (!isValidLiquidEssence(stackEssence, stackEssence.getTagCompound())) return false;
-        int liquidDimlet = findLiquidDimlet(stackEssence.getTagCompound());
-        if (liquidDimlet == -1) {
+        if (!isValidLiquidEssence(stackEssence, stackEssence.getTagCompound())) {
+            return false;
+        }
+        DimletKey liquidDimlet = findLiquidDimlet(stackEssence.getTagCompound());
+        if (liquidDimlet == null) {
             return false;
         }
         if (!matchDimletRecipe(liquidDimlet, stackController, stackMemory, stackEnergy)) {
             return false;
         }
-        inventoryHelper.setInventorySlotContents(1, DimletWorkbenchContainer.SLOT_OUTPUT, new ItemStack(ModItems.knownDimlet, 1, liquidDimlet));
+        inventoryHelper.setInventorySlotContents(1, DimletWorkbenchContainer.SLOT_OUTPUT, KnownDimletConfiguration.makeKnownDimlet(liquidDimlet, worldObj));
         return true;
     }
 
     private boolean attemptMaterialDimletCrafting(ItemStack stackController, ItemStack stackMemory, ItemStack stackEnergy, ItemStack stackEssence) {
-        if (!isValidMaterialEssence(stackEssence, stackEssence.getTagCompound())) return false;
-        int materialDimlet = findMaterialDimlet(stackEssence.getTagCompound());
-        if (materialDimlet == -1) {
+        if (!isValidMaterialEssence(stackEssence, stackEssence.getTagCompound())) {
+            return false;
+        }
+        DimletKey materialDimlet = findMaterialDimlet(stackEssence.getTagCompound());
+        if (materialDimlet == null) {
             return false;
         }
         if (!matchDimletRecipe(materialDimlet, stackController, stackMemory, stackEnergy)) {
             return false;
         }
-        inventoryHelper.setInventorySlotContents(1, DimletWorkbenchContainer.SLOT_OUTPUT, new ItemStack(ModItems.knownDimlet, 1, materialDimlet));
+        inventoryHelper.setInventorySlotContents(1, DimletWorkbenchContainer.SLOT_OUTPUT, KnownDimletConfiguration.makeKnownDimlet(materialDimlet, worldObj));
         return true;
     }
 
-    private boolean attemptSpecialDimletCrafting(ItemStack stackController, ItemStack stackMemory, ItemStack stackEnergy, ItemStack stackEssence, DimletMapping mapping) {
-        if (!isValidSpecialEssence(stackEssence, stackEssence.getTagCompound())) return false;
-        int specialDimlet = findSpecialDimlet(stackEssence, mapping);
-        if (specialDimlet == -1) {
+    private boolean attemptSpecialDimletCrafting(ItemStack stackController, ItemStack stackMemory, ItemStack stackEnergy, ItemStack stackEssence) {
+        if (!isValidSpecialEssence(stackEssence)) {
+            return false;
+        }
+        DimletKey specialDimlet = findSpecialDimlet(stackEssence);
+        if (specialDimlet == null) {
             return false;
         }
         if (!matchDimletRecipe(specialDimlet, stackController, stackMemory, stackEnergy)) {
             return false;
         }
-        inventoryHelper.setInventorySlotContents(1, DimletWorkbenchContainer.SLOT_OUTPUT, new ItemStack(ModItems.knownDimlet, 1, specialDimlet));
+        inventoryHelper.setInventorySlotContents(1, DimletWorkbenchContainer.SLOT_OUTPUT, KnownDimletConfiguration.makeKnownDimlet(specialDimlet, worldObj));
         return true;
     }
 
-    private boolean attemptMobDimletCrafting(ItemStack stackController, ItemStack stackMemory, ItemStack stackEnergy, ItemStack stackEssence, DimletMapping mapping) {
-        if (!isValidMobEssence(stackEssence, stackEssence.getTagCompound())) return false;
-        String mob = stackEssence.getTagCompound().getString("mobName");
-        int mobDimlet = mapping.getId(DimletType.DIMLET_MOBS, mob);
-        if (!matchDimletRecipe(mobDimlet, stackController, stackMemory, stackEnergy)) {
+    private boolean attemptMobDimletCrafting(ItemStack stackController, ItemStack stackMemory, ItemStack stackEnergy, ItemStack stackEssence) {
+        if (!isValidMobEssence(stackEssence, stackEssence.getTagCompound())) {
             return false;
         }
-        inventoryHelper.setInventorySlotContents(1, DimletWorkbenchContainer.SLOT_OUTPUT, new ItemStack(ModItems.knownDimlet, 1, mobDimlet));
+        String mob = stackEssence.getTagCompound().getString("mobName");
+        if (!matchDimletRecipe(new DimletKey(DimletType.DIMLET_MOBS, mob), stackController, stackMemory, stackEnergy)) {
+            return false;
+        }
+        DimletKey mobDimlet = new DimletKey(DimletType.DIMLET_MOBS, mob);
+        inventoryHelper.setInventorySlotContents(1, DimletWorkbenchContainer.SLOT_OUTPUT, KnownDimletConfiguration.makeKnownDimlet(mobDimlet, worldObj));
         return true;
     }
 
     private boolean attemptBiomeDimletCrafting(ItemStack stackController, ItemStack stackMemory, ItemStack stackEnergy, ItemStack stackEssence) {
-        if (!isValidBiomeEssence(stackEssence, stackEssence.getTagCompound())) return false;
-        int biomeDimlet = findBiomeDimlet(stackEssence.getTagCompound());
-        if (biomeDimlet == -1) {
+        if (!isValidBiomeEssence(stackEssence, stackEssence.getTagCompound())) {
+            return false;
+        }
+        DimletKey biomeDimlet = findBiomeDimlet(stackEssence.getTagCompound());
+        if (biomeDimlet == null) {
             return false;
         }
         if (!matchDimletRecipe(biomeDimlet, stackController, stackMemory, stackEnergy)) {
             return false;
         }
-        inventoryHelper.setInventorySlotContents(1, DimletWorkbenchContainer.SLOT_OUTPUT, new ItemStack(ModItems.knownDimlet, 1, biomeDimlet));
+        inventoryHelper.setInventorySlotContents(1, DimletWorkbenchContainer.SLOT_OUTPUT, KnownDimletConfiguration.makeKnownDimlet(biomeDimlet, worldObj));
         return true;
     }
 
@@ -298,8 +310,8 @@ public class DimletWorkbenchTileEntity extends GenericEnergyHandlerTileEntity im
         checkCrafting();
     }
 
-    private boolean matchDimletRecipe(int id, ItemStack stackController, ItemStack stackMemory, ItemStack stackEnergy) {
-        DimletEntry dimletEntry = KnownDimletConfiguration.getEntry(id);
+    private boolean matchDimletRecipe(DimletKey key, ItemStack stackController, ItemStack stackMemory, ItemStack stackEnergy) {
+        DimletEntry dimletEntry = KnownDimletConfiguration.getEntry(key);
         int rarity = dimletEntry.getRarity();
         if (stackController.getItemDamage() != rarity) {
             return false;
@@ -315,35 +327,35 @@ public class DimletWorkbenchTileEntity extends GenericEnergyHandlerTileEntity im
         return true;
     }
 
-    private int findTimeDimlet(ItemStack stackEssence) {
+    private DimletKey findTimeDimlet(ItemStack stackEssence) {
         float angle = stackEssence.getTagCompound().getFloat("angle");
         return TimeAbsorberTileEntity.findBestTimeDimlet(angle);
     }
 
-    private int findSpecialDimlet(ItemStack stackEssence, DimletMapping mapping) {
+    private DimletKey findSpecialDimlet(ItemStack stackEssence) {
         if (stackEssence.getItem() == ModItems.peaceEssenceItem) {
-            return mapping.getId(DimletType.DIMLET_SPECIAL, "Peaceful");
+            return new DimletKey(DimletType.DIMLET_SPECIAL, "Peaceful");
         } else if (stackEssence.getItem() == ModItems.efficiencyEssenceItem) {
-            return mapping.getId(DimletType.DIMLET_SPECIAL, "Efficiency");
+            return new DimletKey(DimletType.DIMLET_SPECIAL, "Efficiency");
         } else if (stackEssence.getItem() == ModItems.mediocreEfficiencyEssenceItem) {
-            return mapping.getId(DimletType.DIMLET_SPECIAL, "Mediocre Efficiency");
+            return new DimletKey(DimletType.DIMLET_SPECIAL, "Mediocre Efficiency");
         }
-        return -1;
+        return null;
     }
 
-    private int findBiomeDimlet(NBTTagCompound essenceCompound) {
+    private DimletKey findBiomeDimlet(NBTTagCompound essenceCompound) {
         int biomeID = essenceCompound.getInteger("biome");
-        for (Map.Entry<Integer, BiomeGenBase> entry : DimletObjectMapping.idToBiome.entrySet()) {
+        for (Map.Entry<DimletKey, BiomeGenBase> entry : DimletObjectMapping.idToBiome.entrySet()) {
             if (entry.getValue().biomeID == biomeID) {
                 return entry.getKey();
             }
         }
-        return -1;
+        return null;
     }
 
-    private int findMaterialDimlet(NBTTagCompound essenceCompound) {
+    private DimletKey findMaterialDimlet(NBTTagCompound essenceCompound) {
         int blockID = essenceCompound.getInteger("block");
-        for (Map.Entry<Integer, BlockMeta> entry : DimletObjectMapping.idToBlock.entrySet()) {
+        for (Map.Entry<DimletKey, BlockMeta> entry : DimletObjectMapping.idToBlock.entrySet()) {
             if (entry.getValue() != null) {
                 int id = Block.blockRegistry.getIDForObject(entry.getValue().getBlock());
                 if (blockID == id) {
@@ -351,12 +363,12 @@ public class DimletWorkbenchTileEntity extends GenericEnergyHandlerTileEntity im
                 }
             }
         }
-        return -1;
+        return null;
     }
 
-    private int findLiquidDimlet(NBTTagCompound essenceCompound) {
+    private DimletKey findLiquidDimlet(NBTTagCompound essenceCompound) {
         int blockID = essenceCompound.getInteger("liquid");
-        for (Map.Entry<Integer, Block> entry : DimletObjectMapping.idToFluid.entrySet()) {
+        for (Map.Entry<DimletKey, Block> entry : DimletObjectMapping.idToFluid.entrySet()) {
             if (entry.getValue() != null) {
                 int id = Block.blockRegistry.getIDForObject(entry.getValue());
                 if (blockID == id) {
@@ -364,7 +376,7 @@ public class DimletWorkbenchTileEntity extends GenericEnergyHandlerTileEntity im
                 }
             }
         }
-        return -1;
+        return null;
     }
 
     private boolean isValidBiomeEssence(ItemStack stackEssence, NBTTagCompound essenceCompound) {
@@ -458,7 +470,7 @@ public class DimletWorkbenchTileEntity extends GenericEnergyHandlerTileEntity im
         return true;
     }
 
-    private boolean isValidSpecialEssence(ItemStack stackEssence, NBTTagCompound essenceCompound) {
+    private boolean isValidSpecialEssence(ItemStack stackEssence) {
         if (stackEssence.getItem() == ModItems.peaceEssenceItem) {
             return true;
         }
@@ -480,10 +492,10 @@ public class DimletWorkbenchTileEntity extends GenericEnergyHandlerTileEntity im
         ItemStack stack = inventoryHelper.getStacks()[DimletWorkbenchContainer.SLOT_INPUT];
         if (stack != null) {
             if (ModItems.knownDimlet.equals(stack.getItem())) {
-                int id = stack.getItemDamage();
-                if (!KnownDimletConfiguration.craftableDimlets.contains(id)) {
+                DimletKey key = KnownDimletConfiguration.getDimletKey(stack, worldObj);
+                if (!KnownDimletConfiguration.craftableDimlets.contains(key)) {
                     extracting = 64;
-                    idToExtract = id;
+                    idToExtract = key;
                     inventoryHelper.decrStackSize(DimletWorkbenchContainer.SLOT_INPUT, 1);
                     markDirty();
                 }
@@ -530,7 +542,7 @@ public class DimletWorkbenchTileEntity extends GenericEnergyHandlerTileEntity im
             mergeItemOrThrowInWorld(new ItemStack(ModItems.dimletControlCircuitItem, 1, rarity));
         }
 
-        idToExtract = -1;
+        idToExtract = null;
         markDirty();
 
         return true;
@@ -569,7 +581,20 @@ public class DimletWorkbenchTileEntity extends GenericEnergyHandlerTileEntity im
         super.readRestorableFromNBT(tagCompound);
         readBufferFromNBT(tagCompound);
         extracting = tagCompound.getInteger("extracting");
-        idToExtract = tagCompound.getInteger("idToExtract");
+        idToExtract = null;
+        if (tagCompound.hasKey("extDkey")) {
+            DimletType type = DimletType.getTypeByOpcode(tagCompound.getString("extKtype"));
+            idToExtract = new DimletKey(type, tagCompound.getString("extDkey"));
+        } else {
+            if (tagCompound.hasKey("idToExtract")) {
+                // Compatibility with old system.
+                int id = tagCompound.getInteger("idToExtract");
+                if (id != -1) {
+                    DimletMapping mapping = DimletMapping.getDimletMapping(worldObj);
+                    idToExtract = mapping.getKey(id);
+                }
+            }
+        }
         autoExtract = tagCompound.getBoolean("autoExtract");
     }
 
@@ -591,7 +616,10 @@ public class DimletWorkbenchTileEntity extends GenericEnergyHandlerTileEntity im
         super.writeRestorableToNBT(tagCompound);
         writeBufferToNBT(tagCompound);
         tagCompound.setInteger("extracting", extracting);
-        tagCompound.setInteger("idToExtract", idToExtract);
+        if (idToExtract != null) {
+            tagCompound.setString("extKtype", idToExtract.getType().getOpcode());
+            tagCompound.setString("extDkey", idToExtract.getName());
+        }
         tagCompound.setBoolean("autoExtract", autoExtract);
     }
 
@@ -618,8 +646,7 @@ public class DimletWorkbenchTileEntity extends GenericEnergyHandlerTileEntity im
             startExtracting();
             return true;
         } else if (CMD_SETAUTOEXTRACT.equals(command)) {
-            boolean auto = args.get("auto").getBoolean();
-            autoExtract = auto;
+            autoExtract = args.get("auto").getBoolean();
             markDirty();
             return true;
         }

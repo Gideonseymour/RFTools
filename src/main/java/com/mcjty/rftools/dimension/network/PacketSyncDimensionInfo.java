@@ -15,15 +15,13 @@ import java.util.Map;
  * Sync RfToolsDimensionManager data from server to client.
  */
 public class PacketSyncDimensionInfo implements IMessage {
-    Map<Integer, DimensionDescriptor> dimensions;
-    Map<DimensionDescriptor, Integer> dimensionToID;
-    Map<Integer, DimensionInformation> dimensionInformation;
+    private Map<Integer, DimensionDescriptor> dimensions;
+    private Map<Integer, DimensionInformation> dimensionInformation;
 
     @Override
     public void fromBytes(ByteBuf buf) {
         int size = buf.readInt();
         dimensions = new HashMap<Integer, DimensionDescriptor>();
-        dimensionToID = new HashMap<DimensionDescriptor, Integer>();
         for (int i = 0 ; i < size ; i++) {
             int id = buf.readInt();
             PacketBuffer buffer = new PacketBuffer(buf);
@@ -36,7 +34,6 @@ public class PacketSyncDimensionInfo implements IMessage {
             }
             DimensionDescriptor descriptor = new DimensionDescriptor(tagCompound);
             dimensions.put(id, descriptor);
-            dimensionToID.put(descriptor, id);
         }
 
         size = buf.readInt();
@@ -76,12 +73,19 @@ public class PacketSyncDimensionInfo implements IMessage {
         }
     }
 
+    public Map<Integer, DimensionDescriptor> getDimensions() {
+        return dimensions;
+    }
+
+    public Map<Integer, DimensionInformation> getDimensionInformation() {
+        return dimensionInformation;
+    }
+
     public PacketSyncDimensionInfo() {
     }
 
-    public PacketSyncDimensionInfo(Map<Integer, DimensionDescriptor> dimensions, Map<DimensionDescriptor, Integer> dimensionToID, Map<Integer, DimensionInformation> dimensionInformation) {
+    public PacketSyncDimensionInfo(Map<Integer, DimensionDescriptor> dimensions, Map<Integer, DimensionInformation> dimensionInformation) {
         this.dimensions = new HashMap<Integer, DimensionDescriptor>(dimensions);
-        this.dimensionToID = new HashMap<DimensionDescriptor, Integer>(dimensionToID);
         this.dimensionInformation = new HashMap<Integer, DimensionInformation>(dimensionInformation);
     }
 

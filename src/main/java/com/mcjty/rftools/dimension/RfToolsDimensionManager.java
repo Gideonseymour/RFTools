@@ -1,5 +1,6 @@
 package com.mcjty.rftools.dimension;
 
+import com.mcjty.rftools.CommonProxy;
 import com.mcjty.rftools.RFTools;
 import com.mcjty.rftools.dimension.description.DimensionDescriptor;
 import com.mcjty.rftools.dimension.network.PacketCheckDimletConfig;
@@ -20,8 +21,10 @@ import net.minecraft.world.WorldSavedData;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.gen.ChunkProviderServer;
 import net.minecraftforge.common.DimensionManager;
+import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.util.Constants;
 
+import java.io.File;
 import java.util.*;
 
 public class RfToolsDimensionManager extends WorldSavedData {
@@ -34,14 +37,27 @@ public class RfToolsDimensionManager extends WorldSavedData {
 
     private final Set<Integer> reclaimedIds = new HashSet<Integer>();
 
-    public void syncFromServer(Map<Integer, DimensionDescriptor> dimensions, Map<DimensionDescriptor, Integer> dimensionToID, Map<Integer, DimensionInformation> dimensionInformation) {
-        System.out.println("RfToolsDimensionManager.syncFromServer");
-        this.dimensions.clear();
-        this.dimensions.putAll(dimensions);
-        this.dimensionToID.clear();
-        this.dimensionToID.putAll(dimensionToID);
-        this.dimensionInformation.clear();
-        this.dimensionInformation.putAll(dimensionInformation);
+    public void syncFromServer(Map<Integer, DimensionDescriptor> dims, Map<Integer, DimensionInformation> dimInfo) {
+        RFTools.log("RfToolsDimensionManager.syncFromServer");
+        if (dims.isEmpty() || dimInfo.isEmpty()) {
+            RFTools.log("This should not happen! Dimension information from server is empty? Trying to adapt...");
+        }
+
+        for (Map.Entry<Integer, DimensionDescriptor> entry : dims.entrySet()) {
+            int id = entry.getKey();
+            DimensionDescriptor descriptor = entry.getValue();
+            if (dimensions.containsKey(id)) {
+                dimensionToID.remove(dimensions.get(id));
+            }
+            dimensions.put(id, descriptor);
+            dimensionToID.put(descriptor, id);
+        }
+
+        for (Map.Entry<Integer, DimensionInformation> entry : dimInfo.entrySet()) {
+            int id = entry.getKey();
+            DimensionInformation info = entry.getValue();
+            dimensionInformation.put(id, info);
+        }
     }
 
     public RfToolsDimensionManager(String identifier) {
@@ -58,31 +74,38 @@ public class RfToolsDimensionManager extends WorldSavedData {
         }
     }
 
-    public static void unregisterDimensions() {
+    public static void cleanupDimensionInformation() {
         if (instance != null) {
             RFTools.log("Cleaning up RFTools dimensions");
-            for (Map.Entry<Integer, DimensionDescriptor> me : instance.getDimensions().entrySet()) {
-                int id = me.getKey();
-                RFTools.log("    Dimension: " + id);
-                if (DimensionManager.isDimensionRegistered(id)) {
-                    try {
-                        DimensionManager.unregisterDimension(id);
-                    } catch (Exception e) {
-                        // We ignore this error.
-                        RFTools.log("        Could not unregister dimension: " + id);
-                    }
-                    try {
-                        DimensionManager.unregisterProviderType(id);
-                    } catch (Exception e) {
-                        // We ignore this error.
-                        RFTools.log("        Could not unregister provider: " + id);
-                    }
-                }
-            }
+            unregisterDimensions();
             instance.getDimensions().clear();
             instance.dimensionToID.clear();
             instance.dimensionInformation.clear();
             instance.reclaimedIds.clear();
+            instance = null;
+        }
+    }
+
+    public static void unregisterDimensions() {
+        for (Map.Entry<Integer, DimensionDescriptor> me : instance.getDimensions().entrySet()) {
+            int id = me.getKey();
+            if (DimensionManager.isDimensionRegistered(id)) {
+                RFTools.log("    Unregister dimension: " + id);
+                try {
+                    DimensionManager.unregisterDimension(id);
+                } catch (Exception e) {
+                    // We ignore this error.
+                    RFTools.log("        Could not unregister dimension: " + id);
+                }
+                try {
+                    DimensionManager.unregisterProviderType(id);
+                } catch (Exception e) {
+                    // We ignore this error.
+                    RFTools.log("        Could not unregister provider: " + id);
+                }
+            } else {
+                RFTools.log("    Already unregistered! Dimension: " + id);
+            }
         }
     }
 
@@ -107,7 +130,7 @@ public class RfToolsDimensionManager extends WorldSavedData {
             RFTools.log("Send validation data to the client");
             DimletMapping mapping = DimletMapping.getDimletMapping(player.getEntityWorld());
             Map<Integer, DimletKey> dimlets = new HashMap<Integer, DimletKey>();
-            for (Integer id : mapping.getKeys()) {
+            for (Integer id : mapping.getIds()) {
                 dimlets.put(id, mapping.getKey(id));
             }
 
@@ -123,7 +146,7 @@ public class RfToolsDimensionManager extends WorldSavedData {
         DimletMapping mapping = DimletMapping.getDimletMapping(world);
         mapping.overrideServerMapping(dimlets);
 
-        KnownDimletConfiguration.init(world, null);
+        KnownDimletConfiguration.init(world);
         KnownDimletConfiguration.initCrafting(world);
     }
 
@@ -132,7 +155,7 @@ public class RfToolsDimensionManager extends WorldSavedData {
         if (!world.isRemote) {
             // Sync to clients.
             RFTools.log("Sync dimension info to clients!");
-            PacketHandler.INSTANCE.sendToAll(new PacketSyncDimensionInfo(dimensions, dimensionToID, dimensionInformation));
+            PacketHandler.INSTANCE.sendToAll(new PacketSyncDimensionInfo(dimensions, dimensionInformation));
         }
     }
 
@@ -156,9 +179,6 @@ public class RfToolsDimensionManager extends WorldSavedData {
     }
 
     public static RfToolsDimensionManager getDimensionManager(World world) {
-//        if (world.isRemote) {
-//            return null;
-//        }
         if (instance != null) {
             return instance;
         }
@@ -203,6 +223,21 @@ public class RfToolsDimensionManager extends WorldSavedData {
         DimensionManager.unregisterProviderType(id);
     }
 
+    public void recoverDimension(World world, int id, DimensionDescriptor descriptor, String name) {
+        if (!DimensionManager.isDimensionRegistered(id)) {
+            registerDimensionToServerAndClient(id);
+        }
+
+        dimensions.put(id, descriptor);
+        dimensionToID.put(descriptor, id);
+
+        DimensionInformation dimensionInfo = new DimensionInformation(name, descriptor, world);
+        dimensionInformation.put(id, dimensionInfo);
+
+        save(world);
+        touchSpawnChunk(id);
+    }
+
     public int createNewDimension(World world, DimensionDescriptor descriptor, String name) {
         int id = 0;
         while (!reclaimedIds.isEmpty()) {
@@ -228,6 +263,11 @@ public class RfToolsDimensionManager extends WorldSavedData {
 
         save(world);
 
+        touchSpawnChunk(id);
+        return id;
+    }
+
+    private void touchSpawnChunk(int id) {
         // Make sure world generation kicks in for at least one chunk so that our matter receiver
         // is generated and registered.
         WorldServer worldServerForDimension = MinecraftServer.getServer().worldServerForDimension(id);
@@ -243,8 +283,6 @@ public class RfToolsDimensionManager extends WorldSavedData {
                 // We catch this exception to make sure our dimension tab is at least ok.
             }
         }
-
-        return id;
     }
 
     @Override

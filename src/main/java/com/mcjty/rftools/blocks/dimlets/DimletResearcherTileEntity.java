@@ -3,7 +3,9 @@ package com.mcjty.rftools.blocks.dimlets;
 import com.mcjty.container.InventoryHelper;
 import com.mcjty.entity.GenericEnergyHandlerTileEntity;
 import com.mcjty.rftools.items.ModItems;
+import com.mcjty.rftools.items.dimlets.DimletKey;
 import com.mcjty.rftools.items.dimlets.DimletRandomizer;
+import com.mcjty.rftools.items.dimlets.KnownDimletConfiguration;
 import com.mcjty.rftools.network.Argument;
 import com.mcjty.rftools.network.PacketHandler;
 import com.mcjty.rftools.network.PacketRequestIntegerFromServer;
@@ -40,8 +42,8 @@ public class DimletResearcherTileEntity extends GenericEnergyHandlerTileEntity i
         if (researching > 0) {
             researching--;
             if (researching == 0) {
-                int id = DimletRandomizer.getRandomDimlet(worldObj.rand);
-                InventoryHelper.mergeItemStack(this, new ItemStack(ModItems.knownDimlet, 1, id), 1, 2, new ArrayList<InventoryHelper.SlotModifier>());
+                DimletKey key = DimletRandomizer.getRandomDimlet(worldObj.rand);
+                InventoryHelper.mergeItemStack(this, KnownDimletConfiguration.makeKnownDimlet(key, worldObj), 1, 2, new ArrayList<InventoryHelper.SlotModifier>());
             }
             markDirty();
         } else {

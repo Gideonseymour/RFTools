@@ -1,7 +1,6 @@
 package com.mcjty.rftools.items.dimlets;
 
 import com.mcjty.rftools.RFTools;
-import com.mcjty.rftools.items.ModItems;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.renderer.texture.IIconRegister;
@@ -15,9 +14,7 @@ import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
 import org.lwjgl.input.Keyboard;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class KnownDimlet extends Item {
     private final Map<DimletType, IIcon> icons = new HashMap<DimletType, IIcon>();
@@ -42,7 +39,8 @@ public class KnownDimlet extends Item {
             return stack;
         }
 
-        DimletEntry entry = KnownDimletConfiguration.getEntry(stack.getItemDamage());
+        DimletKey key = KnownDimletConfiguration.getDimletKey(stack, world);
+        DimletEntry entry = KnownDimletConfiguration.getEntry(key);
         if (entry != null) {
             if (isSeedDimlet(entry)) {
                 NBTTagCompound tagCompound = stack.getTagCompound();
@@ -81,16 +79,16 @@ public class KnownDimlet extends Item {
     @Override
     public void addInformation(ItemStack itemStack, EntityPlayer player, List list, boolean whatIsThis) {
         super.addInformation(itemStack, player, list, whatIsThis);
-        DimletMapping mapping = DimletMapping.getDimletMapping(player.worldObj);
-        DimletEntry entry = KnownDimletConfiguration.getEntry(itemStack.getItemDamage());
+        DimletKey key = KnownDimletConfiguration.getDimletKey(itemStack, player.getEntityWorld());
+        DimletEntry entry = KnownDimletConfiguration.getEntry(key);
         if (entry == null) {
             // Safety. Should not occur.
             list.add(EnumChatFormatting.RED + "Something is wrong!");
-            list.add(EnumChatFormatting.RED + "Dimlet with id " + itemStack.getItemDamage() + " is missing!");
+            list.add(EnumChatFormatting.RED + "Dimlet with key " + key + " (id " + itemStack.getItemDamage() + ") is missing!");
             return;
         }
 
-        list.add(EnumChatFormatting.BLUE + "Rarity: " + entry.getRarity() + (KnownDimletConfiguration.craftableDimlets.contains(itemStack.getItemDamage()) ? " (craftable)" : ""));
+        list.add(EnumChatFormatting.BLUE + "Rarity: " + entry.getRarity() + (KnownDimletConfiguration.craftableDimlets.contains(key) ? " (craftable)" : ""));
         list.add(EnumChatFormatting.YELLOW + "Create cost: " + entry.getRfCreateCost() + " RF/tick");
         int maintainCost = entry.getRfMaintainCost();
         if (maintainCost < 0) {
@@ -112,11 +110,18 @@ public class KnownDimlet extends Item {
             }
         }
 
-        if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
+        if (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) || Keyboard.isKeyDown(Keyboard.KEY_RCONTROL)) {
+            list.add(EnumChatFormatting.AQUA + "Dimlet key: " + key);
+            if (KnownDimletConfiguration.isNewKnownDimlet(itemStack)) {
+                list.add(EnumChatFormatting.AQUA + "This dimlet uses a new key");
+            } else {
+                list.add(EnumChatFormatting.AQUA + "This dimlet uses an old key");
+            }
+        } else if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
             for (String info : entry.getKey().getType().getInformation()) {
                 list.add(EnumChatFormatting.WHITE + info);
             }
-            List<String> extra = KnownDimletConfiguration.idToExtraInformation.get(mapping.getId(entry.getKey()));
+            List<String> extra = KnownDimletConfiguration.idToExtraInformation.get(entry.getKey());
             if (extra != null) {
                 for (String info : extra) {
                     list.add(EnumChatFormatting.YELLOW + info);
@@ -131,9 +136,10 @@ public class KnownDimlet extends Item {
         return entry.getKey().getType() == DimletType.DIMLET_SPECIAL && "Seed".equals(entry.getKey().getName());
     }
 
+    @SideOnly(Side.CLIENT)
     @Override
-    public IIcon getIconFromDamage(int damage) {
-        DimletKey key = DimletMapping.getInstance().getKey(damage);
+    public IIcon getIconIndex(ItemStack stack) {
+        DimletKey key = KnownDimletConfiguration.getDimletKey(stack, null);
         if (key == null) {
             // Safety. Should not occur.
             return icons.get(DimletType.DIMLET_SPECIAL);
@@ -144,7 +150,8 @@ public class KnownDimlet extends Item {
 
     @Override
     public String getUnlocalizedName(ItemStack itemStack) {
-        String name = KnownDimletConfiguration.idToDisplayName.get(itemStack.getItemDamage());
+        DimletKey key = KnownDimletConfiguration.getDimletKey(itemStack, null);
+        String name = KnownDimletConfiguration.idToDisplayName.get(key);
         if (name == null) {
             return "<unknown dimlet>";
         }
@@ -160,8 +167,20 @@ public class KnownDimlet extends Item {
     public void getSubItems(Item item, CreativeTabs creativeTabs, List list) {
         DimletMapping mapping = DimletMapping.getInstance();
         if (mapping != null) {
-            for (Integer key : mapping.getKeys()) {
-                list.add(new ItemStack(ModItems.knownDimlet, 1, key));
+            List<DimletKey> sortedKeys = new ArrayList<DimletKey>(mapping.getKeys());
+            Collections.sort(sortedKeys,
+                    new Comparator<DimletKey>() {
+                        @Override
+                        public int compare(DimletKey o1, DimletKey o2) {
+                            if (o1.getType() == o2.getType()) {
+                                return o1.getName().compareTo(o2.getName());
+                            } else {
+                                return o1.getType().compareTo(o2.getType());
+                            }
+                        }
+                    });
+            for (DimletKey key : sortedKeys) {
+                list.add(KnownDimletConfiguration.makeKnownDimlet(key, null));
             }
         }
     }
